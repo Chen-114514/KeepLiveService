@@ -22,41 +22,11 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Fix CMakeLists.txt for NDK compatibility
-      run: |
-        # 查找 CMakeLists.txt 文件
-        CMAKE_FILE=$(find . -name "CMakeLists.txt" | head -n 1)
-        if [ -z "$CMAKE_FILE" ]; then
-          echo "未找到 CMakeLists.txt，跳过修改"
-          exit 0
-        fi
-        
-        echo "找到 CMakeLists.txt: $CMAKE_FILE"
-        
-        # 将 add_library 中的 SHARED 改为 STATIC，解决 invalid sh_info 错误
-        sed -i 's/add_library(keep_alive SHARED/add_library(keep_alive STATIC/' "$CMAKE_FILE"
-        
-        # 添加额外的链接配置（如果尚未存在）
-        if ! grep -q "libutils.so" "$CMAKE_FILE"; then
-          cat >> "$CMAKE_FILE" << 'EOF'
-
-        # 追加链接配置，解决符号表问题
-        set_target_properties(keep_alive PROPERTIES IMPORTED_LOCATION
-            ${CMAKE_SOURCE_DIR}/binder_libs/${ANDROID_ABI}/libutils.so)
-        set_target_properties(keep_alive PROPERTIES IMPORTED_LOCATION
-            ${CMAKE_SOURCE_DIR}/binder_libs/${ANDROID_ABI}/libc.so)
-        set_target_properties(keep_alive PROPERTIES IMPORTED_LOCATION
-            ${CMAKE_SOURCE_DIR}/binder_libs/${ANDROID_ABI}/libcutils.so)
-        EOF
-        fi
-        
-        echo "CMakeLists.txt 修改完成"
-
     - name: Build Debug APK
-      run: ./gradlew assembleDebug --no-daemon
+      run: ./gradlew assembleDebug --no-daemon --stacktrace
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
         name: app-debug
-        path: app/build/outputs/apk/debug/app-debug.apk
+        path: app/build/outputs/apk/debug/app-debug.apk        path: app/build/outputs/apk/debug/app-debug.apk
